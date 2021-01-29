@@ -1,0 +1,2 @@
+BG_COLOR = 0, 0, 0
+RESOLUTION = [720, 480]
