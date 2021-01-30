@@ -16,9 +16,10 @@ class Player(pg.sprite.Sprite):
         self.position = vec(x, y)
         self.rect = self.image.get_rect(center=self.position)
         self.vel = vec(0, 0)
-        self.acceleration = vec(0.2, 0.0)  # The acceleration vec points upwards.
+        self.acceleration = vec(0.2, 0.0)
         self.angle_speed = 0
         self.angle = 0
+        self.score = 0.0
 
     def update(self):
         keys = pg.key.get_pressed()
