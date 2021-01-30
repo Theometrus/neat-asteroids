@@ -10,6 +10,7 @@ class Bullet(pg.sprite.Sprite):
         self.image = pg.transform.rotozoom(img, -player.angle, 1)
         self.rect = self.image.get_rect(center=player.position)
         self.position = vec(player.position)
+        self.radius = 1
 
     def update(self):
         self.position += self.vel

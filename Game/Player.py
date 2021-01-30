@@ -20,6 +20,7 @@ class Player(pg.sprite.Sprite):
         self.angle_speed = 0
         self.angle = 0
         self.score = 0.0
+        self.radius = 5
 
     def update(self):
         keys = pg.key.get_pressed()
@@ -70,3 +71,6 @@ class Player(pg.sprite.Sprite):
             self.position.y = RESOLUTION[1]
         if self.position.y > RESOLUTION[1]:
             self.position.y = 0
+
+    def die(self):
+        pass

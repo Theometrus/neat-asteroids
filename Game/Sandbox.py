@@ -25,32 +25,35 @@ class Sandbox:
 
         self.player = Player(300, 200, self.player_img)
         self.screen = screen
-        self.sprites = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
         self.asteroids = pg.sprite.Group()
-        self.sprites.add(self.player)
-        self.asteroid_count = 0
+        self.player_group = pg.sprite.Group()
+        self.player_group.add(self.player)
 
     def display(self):
         self.setup_background()
 
-        self.sprites.draw(self.screen)
+        self.bullets.draw(self.screen)
         self.asteroids.draw(self.screen)
+        self.player_group.draw(self.screen)
 
     def tick(self):
         keys = pg.key.get_pressed()
         if keys[pg.K_SPACE]:
             bullet = Bullet(self.player, self.bullet_img)
-            self.sprites.add(bullet)
+            self.bullets.add(bullet)
 
         self.player.wrap_around_screen()
 
-        self.remove_out_of_screen(self.sprites)
-        removed = self.remove_out_of_screen(self.asteroids)
-        self.asteroid_count -= removed
+        self.remove_out_of_screen(self.bullets)
+        self.remove_out_of_screen(self.asteroids)
 
-        self.sprites.update()
+        self.bullets.update()
         self.asteroids.update()
+        self.player.update()
+        self.check_collisions()
         self.replenish_asteroids()
+        print(len(self.asteroids))
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()
@@ -70,6 +73,16 @@ class Sandbox:
         return count
 
     def replenish_asteroids(self):
-        while self.asteroid_count < ASTEROID_COUNT:
+        while len(self.asteroids) < ASTEROID_COUNT:
             self.asteroids.add(Asteroid(random.choice(self.ast_imgs)))
-            self.asteroid_count += 1
+
+    def check_collisions(self):
+        for a in self.asteroids:
+            if pg.sprite.collide_circle(self.player, a):
+                self.player.die()
+
+            for b in self.bullets:
+                if pg.sprite.collide_circle(a, b):
+                    self.player.score += 1
+                    self.asteroids.remove(a)
+                    self.bullets.remove(b)
