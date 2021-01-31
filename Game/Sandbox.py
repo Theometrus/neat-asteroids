@@ -14,14 +14,18 @@ class Sandbox:
     def __init__(self, screen):
         game_folder = os.path.dirname(__file__)
         img_folder = os.path.join(game_folder, 'sprites')
-        self.player_img = pg.image.load(os.path.join(img_folder, 'player.png'))
+
         self.bg = pg.image.load(os.path.join(img_folder, 'Space_Stars4.png'))
         self.bullet_img = pg.image.load(os.path.join(img_folder, 'bullet.png'))
 
-        self.ast_imgs = [pg.image.load(os.path.join(img_folder, 'ast1.png')),
-                         pg.image.load(os.path.join(img_folder, 'ast2.png')),
-                         pg.image.load(os.path.join(img_folder, 'ast3.png')),
-                         pg.image.load(os.path.join(img_folder, 'ast4.png'))]
+        self.ast_imgs = [pg.image.load(os.path.join(img_folder, 'ast1.png'))]
+
+        # ,
+        # pg.image.load(os.path.join(img_folder, 'ast2.png')),
+        # pg.image.load(os.path.join(img_folder, 'ast3.png')),
+        # pg.image.load(os.path.join(img_folder, 'ast4.png'))
+
+        self.player_img = pg.image.load(os.path.join(img_folder, 'tile010.png'))
 
         self.player = Player(300, 200, self.player_img)
         self.screen = screen
@@ -53,7 +57,6 @@ class Sandbox:
         self.player.update()
         self.check_collisions()
         self.replenish_asteroids()
-        print(len(self.asteroids))
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()

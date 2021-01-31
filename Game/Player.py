@@ -1,7 +1,8 @@
 import pygame as pg
 from pygame.locals import *
+from sympy import Segment, Point
 
-from settings import RESOLUTION, MAX_SPEED
+from settings import RESOLUTION, MAX_SPEED, PLAYER_VISION_RANGE
 
 vec = pg.math.Vector2
 
@@ -21,6 +22,8 @@ class Player(pg.sprite.Sprite):
         self.angle = 0
         self.score = 0.0
         self.radius = 5
+        self.curr_img = 0
+        self.vision = {}
 
     def update(self):
         keys = pg.key.get_pressed()
@@ -45,6 +48,20 @@ class Player(pg.sprite.Sprite):
         self.position += self.vel
         self.rect.center = self.position
         self.stabilize()  # Return to a resting position gradually
+
+        self.update_vision()
+
+    def update_vision(self):
+        center = Point(self.rect.x, self.rect.y)
+        self.vision["N"] = Segment(center, Point(self.rect.x, self.rect.y - PLAYER_VISION_RANGE))
+        self.vision["E"] = Segment(center, Point(self.rect.x + PLAYER_VISION_RANGE, self.rect.y))
+        self.vision["S"] = Segment(center, Point(self.rect.x, self.rect.y + PLAYER_VISION_RANGE))
+        self.vision["W"] = Segment(center, Point(self.rect.x - PLAYER_VISION_RANGE, self.rect.y))
+
+        self.vision["NE"] = Segment(center, Point(self.rect.x + PLAYER_VISION_RANGE, self.rect.y - PLAYER_VISION_RANGE))
+        self.vision["SE"] = Segment(center, Point(self.rect.x + PLAYER_VISION_RANGE, self.rect.y + PLAYER_VISION_RANGE))
+        self.vision["SW"] = Segment(center, Point(self.rect.x - PLAYER_VISION_RANGE, self.rect.y + PLAYER_VISION_RANGE))
+        self.vision["NW"] = Segment(center, Point(self.rect.x - PLAYER_VISION_RANGE, self.rect.y - PLAYER_VISION_RANGE))
 
     def rotate(self):
         # Rotate the acceleration vector.
