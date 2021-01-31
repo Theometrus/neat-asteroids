@@ -1,6 +1,6 @@
 import pygame as pg
 from pygame.locals import *
-from sympy import Segment, Point
+from shapely.geometry import LineString
 
 from settings import RESOLUTION, MAX_SPEED, PLAYER_VISION_RANGE
 
@@ -10,7 +10,7 @@ vec = pg.math.Vector2
 # Thruster motions courtesy of
 # https://stackoverflow.com/questions/48856922/pygame-how-to-make-sprite-move-in-the-direction-its-facing-with-vectors
 class Player(pg.sprite.Sprite):
-    def __init__(self, x, y, img):
+    def __init__(self, x, y, img, brain):
         pg.sprite.Sprite.__init__(self)
         self.image = img
         self.original_image = self.image
@@ -24,23 +24,11 @@ class Player(pg.sprite.Sprite):
         self.radius = 5
         self.curr_img = 0
         self.vision = {}
+        self.dead = False
+        self.brain = brain
+        self.time_alive = 0
 
     def update(self):
-        keys = pg.key.get_pressed()
-        if keys[K_LEFT]:
-            self.angle_speed = -5
-            self.rotate()
-        if keys[K_RIGHT]:
-            self.angle_speed = 5
-            self.rotate()
-
-        # If up or down is pressed, accelerate the ship by
-        # adding the acceleration to the velocity vector.
-        if keys[K_UP]:
-            self.vel += self.acceleration
-        if keys[K_DOWN]:
-            self.vel -= self.acceleration
-
         # max speed
         if self.vel.length() > MAX_SPEED:
             self.vel.scale_to_length(MAX_SPEED)
@@ -50,18 +38,42 @@ class Player(pg.sprite.Sprite):
         self.stabilize()  # Return to a resting position gradually
 
         self.update_vision()
+        self.time_alive += 1
+
+    def propagate(self, inputs):
+        self.brain.outputs = []
+        ins = list(inputs.values())
+        ins.append(self.angle / 360.0)
+        self.brain.calculate(ins)
+        return self.brain.outputs.index(max(self.brain.outputs))
+
+    def accelerate(self):
+        self.vel += self.acceleration
+
+    def decelerate(self):
+        self.vel -= self.acceleration
+
+    def rotate_counter_clockwise(self):
+        self.angle_speed = -5
+        self.rotate()
+
+    def rotate_clockwise(self):
+        self.angle_speed = 5
+        self.rotate()
 
     def update_vision(self):
-        center = Point(self.rect.x, self.rect.y)
-        self.vision["N"] = Segment(center, Point(self.rect.x, self.rect.y - PLAYER_VISION_RANGE))
-        self.vision["E"] = Segment(center, Point(self.rect.x + PLAYER_VISION_RANGE, self.rect.y))
-        self.vision["S"] = Segment(center, Point(self.rect.x, self.rect.y + PLAYER_VISION_RANGE))
-        self.vision["W"] = Segment(center, Point(self.rect.x - PLAYER_VISION_RANGE, self.rect.y))
+        center = self.rect.center
+        x = center[0]
+        y = center[1]
+        self.vision["N"] = LineString([center, (x, y - PLAYER_VISION_RANGE)])
+        self.vision["E"] = LineString([center, (x + PLAYER_VISION_RANGE, y)])
+        self.vision["S"] = LineString([center, (x, y + PLAYER_VISION_RANGE)])
+        self.vision["W"] = LineString([center, (x - PLAYER_VISION_RANGE, y)])
 
-        self.vision["NE"] = Segment(center, Point(self.rect.x + PLAYER_VISION_RANGE, self.rect.y - PLAYER_VISION_RANGE))
-        self.vision["SE"] = Segment(center, Point(self.rect.x + PLAYER_VISION_RANGE, self.rect.y + PLAYER_VISION_RANGE))
-        self.vision["SW"] = Segment(center, Point(self.rect.x - PLAYER_VISION_RANGE, self.rect.y + PLAYER_VISION_RANGE))
-        self.vision["NW"] = Segment(center, Point(self.rect.x - PLAYER_VISION_RANGE, self.rect.y - PLAYER_VISION_RANGE))
+        self.vision["NE"] = LineString([center, (x + PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
+        self.vision["SE"] = LineString([center, (x + PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
+        self.vision["SW"] = LineString([center, (x - PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
+        self.vision["NW"] = LineString([center, (x - PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
 
     def rotate(self):
         # Rotate the acceleration vector.
@@ -90,4 +102,4 @@ class Player(pg.sprite.Sprite):
             self.position.y = 0
 
     def die(self):
-        pass
+        self.dead = True
