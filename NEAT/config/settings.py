@@ -24,7 +24,7 @@ WEIGHT_INITIAL_CAP = 170.0
 WEIGHT_PERTURBATION = 15.0
 
 # ========================== Population parameters ========================== #
-POPULATION_SIZE = 150
+POPULATION_SIZE = 100
 EXCESS_COEFFICIENT = 2.0
 DISJOINT_COEFFICIENT = 2.0
 WEIGHT_COEFFICIENT = 1.0

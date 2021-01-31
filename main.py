@@ -1,5 +1,4 @@
 import pygame as pg
-import threading
 
 from AsteroidFitnessEvaluator import AsteroidFitnessEvaluator
 from Game.Sandbox import Sandbox
@@ -18,9 +17,9 @@ def main():
     gen = 0
     running = True
     while running:
-        avg_score = 0.0
         ctr = 0
         print("=========== GENERATION {} START ===========".format(gen))
+
         for i in population.networks:
             sandbox = Sandbox(screen, i)
             ctr += 1
@@ -57,6 +56,3 @@ if __name__ == '__main__':
     pg.init()
     main()
     pg.quit()
-
-
-
