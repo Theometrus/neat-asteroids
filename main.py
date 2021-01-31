@@ -1,4 +1,5 @@
 import pygame as pg
+import threading
 
 from AsteroidFitnessEvaluator import AsteroidFitnessEvaluator
 from Game.Sandbox import Sandbox
