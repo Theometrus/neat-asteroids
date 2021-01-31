@@ -38,8 +38,4 @@ class Asteroid(pg.sprite.Sprite):
         self.angle += self.angle_speed
         self.image = pg.transform.rotate(self.original_image, -self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
-        self.update_vision_circle()
 
-    def update_vision_circle(self):
-        self.center = Point(self.rect.center[0], self.rect.center[1])
-        self.circle = self.center.buffer(self.radius).boundary

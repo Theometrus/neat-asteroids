@@ -8,6 +8,7 @@ from shapely.geometry import LineString, Point
 
 from Game.Asteroid import Asteroid
 from Game.Bullet import Bullet
+from Game.Grid import Grid
 from Game.Player import Player
 from settings import RESOLUTION, ASTEROID_COUNT
 
@@ -29,6 +30,8 @@ class Sandbox:
         self.player_group = pg.sprite.Group()
         self.player_group.add(self.player)
         self.cooldown = 0
+        self.grid = Grid(RESOLUTION[0], RESOLUTION[1], 128)
+        self.grid.insert(self.player, self.player.rect.center[0], self.player.rect.center[1])
 
     def display(self):
         self.setup_background()
@@ -42,14 +45,30 @@ class Sandbox:
 
         self.remove_out_of_screen(self.bullets)
         self.remove_out_of_screen(self.asteroids)
-
-        self.bullets.update()
         self.replenish_asteroids()
-        self.asteroids.update()
-        self.player.update()
+
+        for i in self.bullets:
+            self.update_element_and_grid(i)
+
+        for i in self.asteroids:
+            self.update_element_and_grid(i)
+
+        self.update_element_and_grid(self.player)
+
         self.check_collisions()
         self.propagate_player()
         self.cooldown += 1
+
+    def update_element_and_grid(self, elem):
+        old_x = elem.rect.center[0]
+        old_y = elem.rect.center[1]
+        old_key = self.grid.get_key(old_x, old_y)
+        elem.update()
+        new_key = self.grid.get_key(elem.rect.center[0], elem.rect.center[1])
+
+        if old_key != new_key:
+            self.grid.delete(elem, old_x, old_y)
+            self.grid.insert(elem, elem.rect.center[0], elem.rect.center[1])
 
     def propagate_player(self):
         vision_inputs = {}
@@ -59,28 +78,19 @@ class Sandbox:
 
         for a in self.asteroids:
             for key, val in self.player.vision.items():
-                i = a.circle.intersection(val)
-                point = None
-
-                # Shapely returns different types depending on the result, hence need these tests
-                if type(i) is not LineString:
-                    # One point of intersection
-                    if type(i) is Point:
-                        point = i.coords[0]
-
-                    # Two points of intersection
-                    else:
-                        player_coords = self.player.rect.center
-                        d1 = self.distance(i.geoms[0].coords[0], player_coords)
-                        d2 = self.distance(i.geoms[1].coords[0], player_coords)
-                        point = i.geoms[0].coords[0] if d1 < d2 else i.geoms[1].coords[0]
+                p1, p2 = self.find_line_circle_intersection(a.rect.center[0], a.rect.center[1], a.radius, val[0], val[1])
+                point = self.find_closest_of_two_points(p1, p2, self.player.rect.center)
 
                 if point is not None:
+                    epsilon = 0.0000001
                     dist = self.distance(self.player.rect.center, point)
-                    scaled_dist = 1 - (dist / val.length)  # Want the input to get stronger the closer the enemy is
+                    length = self.distance(val[0], val[1])
 
-                    if vision_inputs[key] < scaled_dist:
-                        vision_inputs[key] = scaled_dist
+                    # Check if this point is on this line segment
+                    if -epsilon < (dist + self.distance(point, val[1]) - length) < epsilon:
+                        scaled_dist = 1 - (dist / length)  # Want the input to get stronger the closer the enemy is
+                        if vision_inputs[key] < scaled_dist:
+                            vision_inputs[key] = scaled_dist
 
         choice = self.player.propagate(vision_inputs)
 
@@ -94,12 +104,54 @@ class Sandbox:
             self.player.rotate_counter_clockwise()
         elif choice == 4:
             if self.cooldown % 30 == 0:  # Don't allow player to make bullet laser beams
-                self.bullets.add(Bullet(self.player, self.bullet_img))
+                bullet = Bullet(self.player, self.bullet_img)
+                self.bullets.add(bullet)
+                self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
+
+    def find_closest_of_two_points(self, p1, p2, center):
+        if p1 == (None, None) and p2 == (None, None):
+            return None
+        elif p2 == (None, None):
+            return p1
+
+        dist1 = self.distance(center, p1)
+        dist2 = self.distance(center, p2)
+
+        return p1 if dist1 < dist2 else p2
+
+    # Courtesy of https://stackoverflow.com/questions/23016676/line-segment-and-circle-intersection
+    def find_line_circle_intersection(self, cx, cy, radius, point1,  point2):
+        dx = point2[0] - point1[0]
+        dy = point2[1] - point1[1]
+
+        a = dx * dx + dy * dy
+        b = 2 * (dx * (point1[0] - cx) + dy * (point1[1] - cy))
+        c = (point1[0] - cx) * (point1[0] - cx) + (point1[1] - cy) * (point1[1] - cy) - radius * radius
+
+        det = b * b - 4 * a * c
+
+        if a <= 0.0000001 or det < 0:
+            # No real solutions.
+            intersection1 = (None, None)
+            intersection2 = (None, None)
+        elif det == 0:
+            # One solution.
+            t = -b / (2 * a)
+            intersection1 = (point1[0] + t * dx, point1[1] + t * dy)
+            intersection2 = (None, None)
+        else:
+            # Two solutions.
+            t = (-b + math.sqrt(det)) / (2 * a)
+            intersection1 = (point1[0] + t * dx, point1[1] + t * dy)
+            t = (-b - math.sqrt(det)) / (2 * a)
+            intersection2 = (point1[0] + t * dx, point1[1] + t * dy)
+
+        return intersection1, intersection2
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()
-        for x, y in itertools.product(range(0, 720, brick_width),
-                                      range(0, 480, brick_height)):
+        for x, y in itertools.product(range(0, RESOLUTION[0], brick_width),
+                                      range(0, RESOLUTION[1], brick_height)):
             self.screen.blit(self.bg, (x, y))
 
     def remove_out_of_screen(self, sprites):
@@ -109,24 +161,39 @@ class Sandbox:
             if s.position.x > RESOLUTION[0] + 50 or s.position.x < -50 or s.position.y <= -50 or s.position.y > \
                     RESOLUTION[1] + 50:
                 sprites.remove(s)
+                self.grid.delete(s, s.rect.center[0], s.rect.center[1])
                 count += 1
 
         return count
 
     def replenish_asteroids(self):
         while len(self.asteroids) < ASTEROID_COUNT:
-            self.asteroids.add(Asteroid(random.choice(self.ast_imgs)))
+            asteroid = Asteroid(random.choice(self.ast_imgs))
+            self.asteroids.add(asteroid)
+            self.grid.insert(asteroid, asteroid.rect.center[0], asteroid.rect.center[1])
 
     def check_collisions(self):
-        for a in self.asteroids:
-            if pg.sprite.collide_circle(self.player, a):
+        player_zone = self.grid.get_zone(self.player.rect.center[0], self.player.rect.center[1])
+
+        for i in player_zone:
+            if i == self.player:
+                continue
+
+            if pg.sprite.collide_circle(self.player, i):
                 self.player.die()
 
-            for b in self.bullets:
-                if pg.sprite.collide_circle(a, b):
+        for b in self.bullets:
+            b_zone = self.grid.get_zone(b.rect.center[0], b.rect.center[1])
+            asteroids = [x for x in b_zone if type(x) is Asteroid]
+            for i in asteroids:
+                if pg.sprite.collide_circle(i, b):
                     self.player.score += 1
-                    self.asteroids.remove(a)
+                    self.asteroids.remove(i)
                     self.bullets.remove(b)
+
+                    self.grid.delete(i, i.rect.center[0], i.rect.center[1])
+                    self.grid.delete(b, b.rect.center[0], b.rect.center[1])
+
 
     def distance(self, p1, p2):
         if len(p1) != len(p2):

@@ -65,15 +65,26 @@ class Player(pg.sprite.Sprite):
         center = self.rect.center
         x = center[0]
         y = center[1]
-        self.vision["N"] = LineString([center, (x, y - PLAYER_VISION_RANGE)])
-        self.vision["E"] = LineString([center, (x + PLAYER_VISION_RANGE, y)])
-        self.vision["S"] = LineString([center, (x, y + PLAYER_VISION_RANGE)])
-        self.vision["W"] = LineString([center, (x - PLAYER_VISION_RANGE, y)])
 
-        self.vision["NE"] = LineString([center, (x + PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
-        self.vision["SE"] = LineString([center, (x + PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
-        self.vision["SW"] = LineString([center, (x - PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
-        self.vision["NW"] = LineString([center, (x - PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
+        self.vision["N"] = [center, (x, y - PLAYER_VISION_RANGE)]
+        self.vision["E"] = [center, (x + PLAYER_VISION_RANGE, y)]
+        self.vision["S"] = [center, (x, y + PLAYER_VISION_RANGE)]
+        self.vision["W"] = [center, (x - PLAYER_VISION_RANGE, y)]
+
+        self.vision["NE"] = [center, (x + PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)]
+        self.vision["SE"] = [center, (x + PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)]
+        self.vision["SW"] = [center, (x - PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)]
+        self.vision["NW"] = [center, (x - PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)]
+
+        # self.vision["N"] = LineString([center, (x, y - PLAYER_VISION_RANGE)])
+        # self.vision["E"] = LineString([center, (x + PLAYER_VISION_RANGE, y)])
+        # self.vision["S"] = LineString([center, (x, y + PLAYER_VISION_RANGE)])
+        # self.vision["W"] = LineString([center, (x - PLAYER_VISION_RANGE, y)])
+        #
+        # self.vision["NE"] = LineString([center, (x + PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
+        # self.vision["SE"] = LineString([center, (x + PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
+        # self.vision["SW"] = LineString([center, (x - PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
+        # self.vision["NW"] = LineString([center, (x - PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
 
     def rotate(self):
         # Rotate the acceleration vector.
