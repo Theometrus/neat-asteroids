@@ -1,3 +1,5 @@
+import random
+
 import pygame as pg
 
 from AsteroidFitnessEvaluator import AsteroidFitnessEvaluator
@@ -17,8 +19,9 @@ def main():
     gen = 0
     running = True
     sandboxes = [Sandbox(screen, brain) for brain in population.networks]
-    first_iteration = True
     print("========== GENERATION {} START ==========".format(gen))
+    player = random.choice(sandboxes)
+    clock = pg.time.Clock()
     while running:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -38,25 +41,19 @@ def main():
                 i.tick()
                 all_dead = False
 
-        # Display player from the biggest (probably most fit as of last generation) species
-        biggest_species = 0.0
-        player = None
-        if not first_iteration:
-            for s in population.species:
-                if len(s.members) > biggest_species:
-                    biggest_species = len(s.members)
-                    player = [x for x in sandboxes if x.player.brain == s.representative][0]
-        else:
-            player = sandboxes[0]
+        if player.player.dead:
+            living_players = [x for x in sandboxes if not x.player.dead]
+            if len(living_players) > 0:
+                player = random.choice(living_players)
 
-        # player = sandboxes[0]
         player.display()
         pg.display.update()
-        pg.time.delay(delay)
+        # pg.time.delay(delay)
+        pg.display.set_caption("NEAT Asteroids - {} Player(s) Surviving".format(len([x for x in sandboxes if not x.player.dead])))
+
+        # clock.tick(60)
 
         if all_dead:
-            first_iteration = False
-
             for i in sandboxes:
                 fitness_eval.calculate(i.player)
 
@@ -69,6 +66,8 @@ def main():
             gen += 1
             sandboxes = [Sandbox(screen, brain) for brain in population.networks]
             print("========== GENERATION {} START ==========".format(gen))
+            player = random.choice(sandboxes)
+            print("NUMBER OF SPECIES: {}".format(len(population.species)))
 
 
 if __name__ == '__main__':

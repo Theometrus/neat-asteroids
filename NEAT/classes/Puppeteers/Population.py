@@ -69,26 +69,26 @@ class Population:
                 species = Species(n)
                 species.members.append(n)
                 self.species.append(species)
+                n.species = species
 
     def assign_new_representatives(self):
         for s in self.species:
             s.representative = random.choice(s.members)
 
     def erase_extinct_species(self):
-        # Prevent empty species lists from cluttering the program
+        # Prevent empty/1-member species lists from cluttering the program
 
         orphans = []
 
         for s in self.species:
             if len(s.members) == 1:
                 orphans.append(s.members[0])
+                rand_species = random.choice([x for x in self.species if x != s and len(x.members) > 0])
+                rand_species.members.append(s.members[0])
+                s.members[0].species = rand_species
+                s.members = []
 
         self.species = [x for x in self.species if len(x.members) > 1]
-
-        for o in orphans:  # Reassign lone members to random species
-            rand_species = random.choice(self.species)
-            rand_species.members.append(o)
-            o.species = rand_species
 
     def calculate_fitnesses(self):
         # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
@@ -107,6 +107,9 @@ class Population:
                 return
             elif s.stagnation_timer == 0:
                 s.new_size = 0
+                mean_fitness *= POPULATION_SIZE
+                mean_fitness -= s.average_fitness
+                mean_fitness /= POPULATION_SIZE
                 continue
             s.new_size = round(s.average_fitness / mean_fitness)
 
@@ -117,7 +120,7 @@ class Population:
             s.members.sort(key=lambda x: x.fitness)
             cutoff = math.floor((1 - SURVIVORS) * len(s.members))
 
-            if len(s.members) - cutoff < 2:  # Don't eradicate small species
+            if len(s.members) - cutoff < 5:  # Don't eradicate small species
                 continue
 
             s.members = s.members[cutoff:]
@@ -130,10 +133,11 @@ class Population:
         for s in self.species:
             offspring = [s.representative]
             self.networks.append(s.representative)
-            elite_num = math.ceil(ELITES * len(s.members))
+            elite_num = round(ELITES * len(s.members))
+            elite_cutoff = len(s.members) - elite_num
 
             # Transfer some percentage of the population to the next generation unaltered (elitism)
-            for i in s.members[elite_num:]:
+            for i in s.members[elite_cutoff:]:
                 elite_clone = i.get_child(i, self.create_empty_genome())  # Mating a genome with itself clones it
                 offspring.append(elite_clone)
                 self.networks.append(elite_clone)

@@ -4,7 +4,6 @@ import os
 import random
 
 import pygame as pg
-from shapely.geometry import LineString, Point
 
 from Game.Asteroid import Asteroid
 from Game.Bullet import Bullet
@@ -179,7 +178,7 @@ class Sandbox:
             if i == self.player:
                 continue
 
-            if pg.sprite.collide_circle(self.player, i):
+            if i not in self.bullets and pg.sprite.collide_circle(self.player, i):
                 self.player.die()
 
         for b in self.bullets:
@@ -190,7 +189,6 @@ class Sandbox:
                     self.player.score += 1
                     self.asteroids.remove(i)
                     self.bullets.remove(b)
-
                     self.grid.delete(i, i.rect.center[0], i.rect.center[1])
                     self.grid.delete(b, b.rect.center[0], b.rect.center[1])
 

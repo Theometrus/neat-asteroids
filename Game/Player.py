@@ -17,7 +17,7 @@ class Player(pg.sprite.Sprite):
         self.position = vec(x, y)
         self.rect = self.image.get_rect(center=self.position)
         self.vel = vec(0, 0)
-        self.acceleration = vec(0.2, 0.0)
+        self.acceleration = vec(0.1, 0.0)
         self.angle_speed = 0
         self.angle = 0
         self.score = 0.0
@@ -27,6 +27,8 @@ class Player(pg.sprite.Sprite):
         self.dead = False
         self.brain = brain
         self.time_alive = 0
+        self.moved = 0.0
+        self.turned = 0.0
 
     def update(self):
         # max speed
@@ -49,17 +51,21 @@ class Player(pg.sprite.Sprite):
 
     def accelerate(self):
         self.vel += self.acceleration
+        self.moved += 1
 
     def decelerate(self):
         self.vel -= self.acceleration
+        self.moved += 0.5
 
     def rotate_counter_clockwise(self):
         self.angle_speed = -5
         self.rotate()
+        self.turned += 1
 
     def rotate_clockwise(self):
         self.angle_speed = 5
         self.rotate()
+        self.turned += 1
 
     def update_vision(self):
         center = self.rect.center
@@ -98,8 +104,8 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def stabilize(self):
-        self.vel[0] *= 0.991
-        self.vel[1] *= 0.991
+        self.vel[0] *= 0.985
+        self.vel[1] *= 0.985
 
     def wrap_around_screen(self):
         """Wrap around screen."""
