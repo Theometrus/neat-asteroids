@@ -1,6 +1,4 @@
 import pygame as pg
-from pygame.locals import *
-from shapely.geometry import LineString
 
 from settings import RESOLUTION, MAX_SPEED, PLAYER_VISION_RANGE
 

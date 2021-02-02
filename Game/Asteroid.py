@@ -1,8 +1,6 @@
 import random
 
 import pygame as pg
-import shapely
-from shapely.geometry import Point
 
 from settings import RESOLUTION
 
@@ -20,8 +18,6 @@ class Asteroid(pg.sprite.Sprite):
         self.angle = 0
         self.angle_speed = random.uniform(-1.0, 1.0)
         self.radius = 30
-        self.center = Point(self.rect.center[0], self.rect.center[1])
-        self.circle = self.center.buffer(self.radius).boundary
 
     def spawn_out_of_screen(self):
         spawn_zones = [

@@ -71,6 +71,8 @@ class Population:
                 self.species.append(species)
                 n.species = species
 
+        print("initial species: " + str(len(self.species)))
+
     def assign_new_representatives(self):
         for s in self.species:
             s.representative = random.choice(s.members)
