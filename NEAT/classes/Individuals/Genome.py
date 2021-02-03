@@ -37,32 +37,33 @@ class Genome:
         # Picks from a choice of mutations according to probabilities specified in settings.py. Does this a given number
         # of times once again based on settings
 
-        values = [MUT_ADD_NODE, MUT_ADD_LINK, MUT_WEIGHT_ADJUST, MUT_TOGGLE_LINK, MUT_REMOVE_LINK, MUT_REMOVE_NODE]
+        values = [MUT_ADD_NODE, MUT_ADD_LINK, MUT_WEIGHT_ADJUST, MUT_TOGGLE_LINK, MUT_REMOVE_LINK, MUT_REMOVE_NODE,
+                  NO_MUTATION]
+
         probabilities = list(map(lambda x: x/sum(values), values))
+        choices = [0, 1, 2, 3, 4, 5, 6]
 
-        choices = [0, 1, 2, 3, 4, 5]
-        num_to_mutate = random.choice(range(1, MUTATIONS_AT_ONCE))
+        choice = np.random.choice(choices, 1, p=probabilities)
 
-        for _ in range(num_to_mutate):
-            choice = np.random.choice(choices, 1, p=probabilities)
+        if choice == 0:
+            self.mutate_add_node()
 
-            if choice == 0:
-                self.mutate_add_node()
+        elif choice == 1:
+            self.mutate_add_link()
 
-            elif choice == 1:
-                self.mutate_add_link()
+        elif choice == 2:
+            self.mutate_adjust_weights()
 
-            elif choice == 2:
-                self.mutate_adjust_weights()
+        elif choice == 3:
+            self.mutate_toggle_link()
 
-            elif choice == 3:
-                self.mutate_toggle_link()
+        elif choice == 4:
+            self.mutate_remove_connection()
 
-            elif choice == 4:
-                self.mutate_remove_connection()
+        elif choice == 5:
+            self.mutate_remove_node()
 
-            elif choice == 5:
-                self.mutate_remove_node()
+        # If choice == 6 do nothing
 
     def mutate_remove_node(self):
         node = None
@@ -121,6 +122,7 @@ class Genome:
 
     def mutate_add_node(self):
         if len(self.connections) == 0:
+            self.mutate_add_link()
             return
 
         conn = self.find_enabled_connection()  # Prevent nodes from being formed on disabled connections

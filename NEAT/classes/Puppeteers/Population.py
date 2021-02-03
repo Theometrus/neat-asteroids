@@ -24,20 +24,24 @@ class Population:
         self.make_starting_nodes()  # Template nodes for new networks to copy from
         self.make_starting_networks()  # Initial population members
 
+        # Randomize initial children to kickstart the algo
+        for i in self.networks:
+            i.mutate()
+
     def propagate(self, inputs):
         for i in self.networks:
             i.calculate(inputs)
 
     def evolve(self):
-        # self.innovation_guard.new_generation()
+        self.innovation_guard.new_generation()
         self.speciate()
         self.erase_extinct_species()
-        self.assign_new_representatives()
-        self.calculate_fitnesses()
-        self.adjust_species_sizes()
+        self.calculate_initial_fitnesses()
         self.cull()
+        self.adjust_fitnesses()
+        self.adjust_species_sizes()
         self.reproduce()
-        self.reset_networks()
+        self.assign_new_representatives()
 
     def speciate(self):
         reps = []
@@ -69,112 +73,114 @@ class Population:
                 species = Species(n)
                 species.members.append(n)
                 self.species.append(species)
+                species.representative = n
                 n.species = species
-
-        print("initial species: " + str(len(self.species)))
 
     def assign_new_representatives(self):
         for s in self.species:
+            # s.representative = s.champion
             s.representative = random.choice(s.members)
 
     def erase_extinct_species(self):
-        # Prevent empty/1-member species lists from cluttering the program
+        self.species = [x for x in self.species if len(x.members) > 0 and x.stagnation_timer > 0]
+        if len(self.species) == 0:
+            raise Exception('A mass extinction has occurred.')
+
+    def calculate_initial_fitnesses(self):
         for s in self.species:
-            if len(s.members) == 1:
-                closest = 9999
-                spec = random.choice(self.species)
-                for i in self.species:
-                    if i == s:
-                        continue
+            s.calculate_fitnesses(self.fitness_evaluator)
 
-                    delta = s.members[0].compare_to(i.representative)
-                    if delta < closest:
-                        spec = i
-                        closest = delta
-
-                # rand_species = random.choice([x for x in self.species if x != s and len(x.members) > 0])
-                spec.members.append(s.members[0])
-                s.members[0].species = spec
-                # rand_species.members.append(s.members[0])
-                # s.members[0].species = rand_species
-                s.members = []
-
-        self.species = [x for x in self.species if len(x.members) > 1]
-
-    def calculate_fitnesses(self):
+    def adjust_fitnesses(self):
         # Calculate the mean adjusted fitnesses based on the specifications described in the original NEAT paper
 
         for s in self.species:
-            s.calculate_fitnesses(self.fitness_evaluator)
+            s.adjust_fitnesses()
 
     def adjust_species_sizes(self):
         # Make species shrink or grow depending on their performance
 
-        mean_fitness = sum(s.average_fitness for s in self.species) / POPULATION_SIZE
+        mean_fitness_sum = sum(s.average_fitness for s in self.species)
 
         for s in self.species:
-            if mean_fitness == 0:
+            if mean_fitness_sum == 0:
                 s.new_size = len(s.members)
+                print("Error: mean fitness was zero!")
                 return
-            elif s.stagnation_timer == 0:
-                s.new_size = 0
-                mean_fitness *= POPULATION_SIZE
-                mean_fitness -= s.average_fitness
-                mean_fitness /= POPULATION_SIZE
-                continue
-            s.new_size = round(s.average_fitness / mean_fitness)
+
+            s.new_size = math.floor(s.average_fitness / mean_fitness_sum * POPULATION_SIZE)
 
     def cull(self):
         # Exterminate the lowest performing members of most species (without causing extinctions)
 
         for s in self.species:
+            s.members.remove(s.representative)
             s.members.sort(key=lambda x: x.fitness)
             cutoff = math.floor((1 - SURVIVORS) * len(s.members))
 
-            if len(s.members) - cutoff < 5:  # Don't eradicate small species
+            if len(s.members) - cutoff < 2:  # Don't eradicate small species
+                s.members.append(s.representative)
                 continue
 
             s.members = s.members[cutoff:]
+            s.members.append(s.representative)
 
     def reproduce(self):
         # The entire population is replaced by offspring of top performing members
 
         self.networks = []
+        elites = 0
 
         for s in self.species:
-            offspring = [s.representative]
-            self.networks.append(s.representative)
-            elite_num = round(ELITES * len(s.members))
-            elite_cutoff = len(s.members) - elite_num
+            if s.new_size < 1:
+                s.members = []
+                s.representative = None
+                self.species.remove(s)
+                continue
 
-            # Transfer some percentage of the population to the next generation unaltered (elitism)
-            for i in s.members[elite_cutoff:]:
-                elite_clone = i.get_child(i, self.create_empty_genome())  # Mating a genome with itself clones it
-                offspring.append(elite_clone)
-                self.networks.append(elite_clone)
+            # Mating a genome with itself clones it
+            rep_clone = s.representative.get_child(s.representative, self.create_empty_genome())
+            offspring = [rep_clone]
+            rep_clone.species = s
+            s.representative = rep_clone
+            self.networks.append(rep_clone)
 
-            for i in range(s.new_size - 1 - elite_num):  # Excluding the representative and the elites
-                # Decide whether to use sexual (crossover) or asexual reproduction (mutation)
-                if random.uniform(0.0, 1.0) <= MUTATION_RATE:
+            # Transfer the best member of the species to the next generation unaltered
+            if ELITISM:
+                elite_child = s.champion.get_child(s.champion, self.create_empty_genome())
+                elite_child.species = s
+                offspring.append(elite_child)
+                self.networks.append(elite_child)
+                elites = 1
+
+            for i in range(s.new_size - 1 - elites):  # Excluding the representative and the elite (if enabled)
+                if random.uniform(0.0, 1.0) <= CLONE_RATE:
                     parent = self.tournament_select(5, s.members)  # Select a best of 5
                     child = parent.get_child(parent, self.create_empty_genome())  # Effectively clones the parent
-                    child.mutate()
                 else:
                     parent_a = self.tournament_select(5, s.members)
-                    parent_b = self.tournament_select(5, [x for x in s.members if x != parent_a])
+                    parent_b = self.tournament_select(5, s.members)
 
                     child = parent_a.get_child(parent_b, self.create_empty_genome())
+                    child.mutate()
 
                 offspring.append(child)
                 self.networks.append(child)
             s.members = offspring
 
-    def reset_networks(self):
-        # Any elites that get carried over must be reset
+        # If due to flooring we didn't get enough networks, add members to the best species
+        if len(self.networks) < POPULATION_SIZE:
+            self.species.sort(key=lambda x: x.current_best)
+            species = self.species[-1]
 
-        for i in self.networks:
-            i.outputs = []
-            i.fitness = 0.0
+            for _ in range(POPULATION_SIZE - len(self.networks)):
+                parent_a = self.tournament_select(5, species.members)
+                parent_b = self.tournament_select(5, species.members)
+
+                child = parent_a.get_child(parent_b, self.create_empty_genome())
+                child.mutate()
+                child.species = species
+                species.members.append(child)
+                self.networks.append(child)
 
     def create_empty_genome(self):
         nodes_clone = []

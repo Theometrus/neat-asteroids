@@ -147,7 +147,7 @@ class Sandbox:
                         self.player.score += 1
                     else:
                         self.player.score -= 1
-
+                    # self.player.score += 1
                     self.asteroids.remove(i)
                     self.bullets.remove(b)
                     self.grid.delete(i, i.rect.center[0], i.rect.center[1])

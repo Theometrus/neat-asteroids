@@ -43,7 +43,10 @@ class Player(pg.sprite.Sprite):
     def propagate(self, inputs):
         self.brain.outputs = []
         inputs.append(self.angle)
-        self.brain.calculate(list(inputs / np.linalg.norm(inputs)))
+        if np.linalg.norm(inputs) == 0:
+            self.brain.calculate(inputs)
+        else:
+            self.brain.calculate(list(inputs / np.linalg.norm(inputs)))
         return self.brain.outputs.index(max(self.brain.outputs))
 
     def accelerate(self):
