@@ -29,7 +29,7 @@ class Population:
             i.calculate(inputs)
 
     def evolve(self):
-        self.innovation_guard.new_generation()
+        # self.innovation_guard.new_generation()
         self.speciate()
         self.erase_extinct_species()
         self.assign_new_representatives()
@@ -79,15 +79,24 @@ class Population:
 
     def erase_extinct_species(self):
         # Prevent empty/1-member species lists from cluttering the program
-
-        orphans = []
-
         for s in self.species:
             if len(s.members) == 1:
-                orphans.append(s.members[0])
-                rand_species = random.choice([x for x in self.species if x != s and len(x.members) > 0])
-                rand_species.members.append(s.members[0])
-                s.members[0].species = rand_species
+                closest = 9999
+                spec = random.choice(self.species)
+                for i in self.species:
+                    if i == s:
+                        continue
+
+                    delta = s.members[0].compare_to(i.representative)
+                    if delta < closest:
+                        spec = i
+                        closest = delta
+
+                # rand_species = random.choice([x for x in self.species if x != s and len(x.members) > 0])
+                spec.members.append(s.members[0])
+                s.members[0].species = spec
+                # rand_species.members.append(s.members[0])
+                # s.members[0].species = rand_species
                 s.members = []
 
         self.species = [x for x in self.species if len(x.members) > 1]

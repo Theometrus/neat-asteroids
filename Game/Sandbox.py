@@ -4,6 +4,7 @@ import os
 import random
 
 import pygame as pg
+from math import atan2, degrees, pi
 
 from Game.Asteroid import Asteroid
 from Game.Bullet import Bullet
@@ -70,28 +71,24 @@ class Sandbox:
             self.grid.insert(elem, elem.rect.center[0], elem.rect.center[1])
 
     def propagate_player(self):
-        vision_inputs = {}
-
-        for key, val in self.player.vision.items():
-            vision_inputs[key] = 0.0
-
+        ast = random.choice(list(self.asteroids))
+        closest = self.distance(ast.rect.center, self.player.rect.center)
         for a in self.asteroids:
-            for key, val in self.player.vision.items():
-                p1, p2 = self.find_line_circle_intersection(a.rect.center[0], a.rect.center[1], a.radius, val[0], val[1])
-                point = self.find_closest_of_two_points(p1, p2, self.player.rect.center)
+            dist = self.distance(ast.rect.center, a.rect.center)
+            if dist < closest:
+                closest = dist
+                ast = a
 
-                if point is not None:
-                    epsilon = 0.0000001
-                    dist = self.distance(self.player.rect.center, point)
-                    length = self.distance(val[0], val[1])
+        dx = ast.rect.center[0] - self.player.rect.center[0]
+        dy = ast.rect.center[1] - self.player.rect.center[1]
+        rads = atan2(-dy, dx)
+        rads %= 2 * pi
+        degs = degrees(rads)
 
-                    # Check if this point is on this line segment
-                    if -epsilon < (dist + self.distance(point, val[1]) - length) < epsilon:
-                        scaled_dist = 1 - (dist / length)  # Want the input to get stronger the closer the enemy is
-                        if vision_inputs[key] < scaled_dist:
-                            vision_inputs[key] = scaled_dist
+        inputs = [degs, closest]
+        self.player.closest_asteroid = ast
 
-        choice = self.player.propagate(vision_inputs)
+        choice = self.player.propagate(inputs)
 
         if choice == 0:
             self.player.accelerate()
@@ -106,46 +103,6 @@ class Sandbox:
                 bullet = Bullet(self.player, self.bullet_img)
                 self.bullets.add(bullet)
                 self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
-
-    def find_closest_of_two_points(self, p1, p2, center):
-        if p1 == (None, None) and p2 == (None, None):
-            return None
-        elif p2 == (None, None):
-            return p1
-
-        dist1 = self.distance(center, p1)
-        dist2 = self.distance(center, p2)
-
-        return p1 if dist1 < dist2 else p2
-
-    # Courtesy of https://stackoverflow.com/questions/23016676/line-segment-and-circle-intersection
-    def find_line_circle_intersection(self, cx, cy, radius, point1,  point2):
-        dx = point2[0] - point1[0]
-        dy = point2[1] - point1[1]
-
-        a = dx * dx + dy * dy
-        b = 2 * (dx * (point1[0] - cx) + dy * (point1[1] - cy))
-        c = (point1[0] - cx) * (point1[0] - cx) + (point1[1] - cy) * (point1[1] - cy) - radius * radius
-
-        det = b * b - 4 * a * c
-
-        if a <= 0.0000001 or det < 0:
-            # No real solutions.
-            intersection1 = (None, None)
-            intersection2 = (None, None)
-        elif det == 0:
-            # One solution.
-            t = -b / (2 * a)
-            intersection1 = (point1[0] + t * dx, point1[1] + t * dy)
-            intersection2 = (None, None)
-        else:
-            # Two solutions.
-            t = (-b + math.sqrt(det)) / (2 * a)
-            intersection1 = (point1[0] + t * dx, point1[1] + t * dy)
-            t = (-b - math.sqrt(det)) / (2 * a)
-            intersection2 = (point1[0] + t * dx, point1[1] + t * dy)
-
-        return intersection1, intersection2
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()
@@ -186,12 +143,15 @@ class Sandbox:
             asteroids = [x for x in b_zone if type(x) is Asteroid]
             for i in asteroids:
                 if pg.sprite.collide_circle(i, b):
-                    self.player.score += 1
+                    if i == self.player.closest_asteroid:
+                        self.player.score += 1
+                    else:
+                        self.player.score -= 1
+
                     self.asteroids.remove(i)
                     self.bullets.remove(b)
                     self.grid.delete(i, i.rect.center[0], i.rect.center[1])
                     self.grid.delete(b, b.rect.center[0], b.rect.center[1])
-
 
     def distance(self, p1, p2):
         if len(p1) != len(p2):

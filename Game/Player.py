@@ -1,3 +1,4 @@
+import numpy as np
 import pygame as pg
 
 from settings import RESOLUTION, MAX_SPEED, PLAYER_VISION_RANGE
@@ -21,12 +22,12 @@ class Player(pg.sprite.Sprite):
         self.score = 0.0
         self.radius = 5
         self.curr_img = 0
-        self.vision = {}
         self.dead = False
         self.brain = brain
         self.time_alive = 0
         self.moved = 0.0
         self.turned = 0.0
+        self.closest_asteroid = None
 
     def update(self):
         # max speed
@@ -37,14 +38,12 @@ class Player(pg.sprite.Sprite):
         self.rect.center = self.position
         self.stabilize()  # Return to a resting position gradually
 
-        self.update_vision()
         self.time_alive += 1
 
     def propagate(self, inputs):
         self.brain.outputs = []
-        ins = list(inputs.values())
-        ins.append(self.angle / 360.0)
-        self.brain.calculate(ins)
+        inputs.append(self.angle)
+        self.brain.calculate(list(inputs / np.linalg.norm(inputs)))
         return self.brain.outputs.index(max(self.brain.outputs))
 
     def accelerate(self):
@@ -64,31 +63,6 @@ class Player(pg.sprite.Sprite):
         self.angle_speed = 5
         self.rotate()
         self.turned += 1
-
-    def update_vision(self):
-        center = self.rect.center
-        x = center[0]
-        y = center[1]
-
-        self.vision["N"] = [center, (x, y - PLAYER_VISION_RANGE)]
-        self.vision["E"] = [center, (x + PLAYER_VISION_RANGE, y)]
-        self.vision["S"] = [center, (x, y + PLAYER_VISION_RANGE)]
-        self.vision["W"] = [center, (x - PLAYER_VISION_RANGE, y)]
-
-        self.vision["NE"] = [center, (x + PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)]
-        self.vision["SE"] = [center, (x + PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)]
-        self.vision["SW"] = [center, (x - PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)]
-        self.vision["NW"] = [center, (x - PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)]
-
-        # self.vision["N"] = LineString([center, (x, y - PLAYER_VISION_RANGE)])
-        # self.vision["E"] = LineString([center, (x + PLAYER_VISION_RANGE, y)])
-        # self.vision["S"] = LineString([center, (x, y + PLAYER_VISION_RANGE)])
-        # self.vision["W"] = LineString([center, (x - PLAYER_VISION_RANGE, y)])
-        #
-        # self.vision["NE"] = LineString([center, (x + PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
-        # self.vision["SE"] = LineString([center, (x + PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
-        # self.vision["SW"] = LineString([center, (x - PLAYER_VISION_RANGE, y + PLAYER_VISION_RANGE)])
-        # self.vision["NW"] = LineString([center, (x - PLAYER_VISION_RANGE, y - PLAYER_VISION_RANGE)])
 
     def rotate(self):
         # Rotate the acceleration vector.
