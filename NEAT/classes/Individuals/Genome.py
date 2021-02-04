@@ -209,6 +209,11 @@ class Genome:
             self.connection_dict[(conn.from_node.innovation_number, conn.to_node.innovation_number)] = conn
             return
 
+        if conn.innovation_number < self.connections[0].innovation_number:
+            self.connections.insert(0, conn)
+            self.connection_dict[(conn.from_node.innovation_number, conn.to_node.innovation_number)] = conn
+            return
+
         for idx, c in enumerate(self.connections):
             if idx + 1 >= len(self.connections):
                 self.connections.append(conn)

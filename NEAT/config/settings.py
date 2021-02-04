@@ -17,8 +17,8 @@ INPUT_NODES = 3
 OUTPUT_NODES = 4
 BIAS_NODES = 1  # Recommended to leave this unchanged
 
-WEIGHT_INITIAL_CAP = 0.5
-WEIGHT_PERTURBATION = 0.01
+WEIGHT_INITIAL_CAP = 1
+WEIGHT_PERTURBATION = 0.02
 
 # ========================== Population parameters ========================== #
 POPULATION_SIZE = 150

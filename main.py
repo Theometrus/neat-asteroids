@@ -51,7 +51,7 @@ def main():
         pg.time.delay(delay)
         pg.display.set_caption("NEAT Asteroids - {} Player(s) Surviving".format(len([x for x in sandboxes if not x.player.dead])))
 
-        # clock.tick(60)
+        # clock.tick(1)
 
         if all_dead:
             for i in sandboxes:

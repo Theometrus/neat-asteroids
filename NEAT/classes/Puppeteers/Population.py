@@ -135,15 +135,10 @@ class Population:
         # The entire population is replaced by offspring of top performing members
 
         self.networks = []
+        self.species = [x for x in self.species if x.new_size > 0]
         elites = 0
 
         for s in self.species:
-            if s.new_size < 1:
-                s.members = []
-                s.representative = None
-                self.species.remove(s)
-                continue
-
             # Mating a genome with itself clones it
             rep_clone = s.representative.get_child(s.representative, self.create_empty_genome())
             offspring = [rep_clone]

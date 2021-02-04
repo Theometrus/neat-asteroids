@@ -35,6 +35,8 @@ class Sandbox:
 
     def display(self):
         self.setup_background()
+        pg.draw.line(self.screen, color=(255, 255, 255), start_pos=self.player.rect.center,
+                     end_pos=self.player.closest_asteroid.rect.center)
 
         self.bullets.draw(self.screen)
         self.asteroids.draw(self.screen)
@@ -91,34 +93,19 @@ class Sandbox:
         outputs = self.player.propagate(inputs)
 
         if outputs[0] >= 0.8:
-            self.player.accelerate()           
+            self.player.accelerate()
 
         if outputs[1] >= 0.8:
             self.player.rotate_clockwise()
         elif outputs[2] >= 0.8:
             self.player.rotate_counter_clockwise()
-        
-        if outputs[3] >= 0.5:
+
+        if outputs[3] >= 0.8:
             if self.cooldown % 100 == 0:  # Don't allow player to make bullet laser beams
                 bullet = Bullet(self.player, self.bullet_img)
                 self.bullets.add(bullet)
                 self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
                 self.player.shots_fired += 1
-
-
-        # if choice == 0:
-        #     self.player.accelerate()
-        # elif choice == 1:
-        #     self.player.decelerate()
-        # elif choice == 2:
-        #     self.player.rotate_clockwise()
-        # elif choice == 3:
-        #     self.player.rotate_counter_clockwise()
-        # elif choice == 4:
-        #     if self.cooldown % 30 == 0:  # Don't allow player to make bullet laser beams
-        #         bullet = Bullet(self.player, self.bullet_img)
-        #         self.bullets.add(bullet)
-        #         self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()
