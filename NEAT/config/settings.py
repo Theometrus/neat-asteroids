@@ -14,11 +14,11 @@ MUT_WEIGHT_REASSIGN = 0.1
 
 # ============================ Network topology ============================= #
 INPUT_NODES = 3
-OUTPUT_NODES = 5
+OUTPUT_NODES = 4
 BIAS_NODES = 1  # Recommended to leave this unchanged
 
-WEIGHT_INITIAL_CAP = 1.0
-WEIGHT_PERTURBATION = 0.02
+WEIGHT_INITIAL_CAP = 0.5
+WEIGHT_PERTURBATION = 0.01
 
 # ========================== Population parameters ========================== #
 POPULATION_SIZE = 150

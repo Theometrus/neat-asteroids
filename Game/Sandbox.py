@@ -74,7 +74,7 @@ class Sandbox:
         ast = random.choice(list(self.asteroids))
         closest = self.distance(ast.rect.center, self.player.rect.center)
         for a in self.asteroids:
-            dist = self.distance(ast.rect.center, a.rect.center)
+            dist = self.distance(self.player.rect.center, a.rect.center)
             if dist < closest:
                 closest = dist
                 ast = a
@@ -83,26 +83,42 @@ class Sandbox:
         dy = ast.rect.center[1] - self.player.rect.center[1]
         rads = atan2(-dy, dx)
         rads %= 2 * pi
-        degs = degrees(rads)
-
+        degs = degrees(rads) / 360
+        closest /= self.distance((0, 0), (RESOLUTION[0], RESOLUTION[1]))
+        closest = 1 - closest
         inputs = [degs, closest]
         self.player.closest_asteroid = ast
+        outputs = self.player.propagate(inputs)
 
-        choice = self.player.propagate(inputs)
+        if outputs[0] >= 0.8:
+            self.player.accelerate()           
 
-        if choice == 0:
-            self.player.accelerate()
-        elif choice == 1:
-            self.player.decelerate()
-        elif choice == 2:
+        if outputs[1] >= 0.8:
             self.player.rotate_clockwise()
-        elif choice == 3:
+        elif outputs[2] >= 0.8:
             self.player.rotate_counter_clockwise()
-        elif choice == 4:
-            if self.cooldown % 30 == 0:  # Don't allow player to make bullet laser beams
+        
+        if outputs[3] >= 0.5:
+            if self.cooldown % 100 == 0:  # Don't allow player to make bullet laser beams
                 bullet = Bullet(self.player, self.bullet_img)
                 self.bullets.add(bullet)
                 self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
+                self.player.shots_fired += 1
+
+
+        # if choice == 0:
+        #     self.player.accelerate()
+        # elif choice == 1:
+        #     self.player.decelerate()
+        # elif choice == 2:
+        #     self.player.rotate_clockwise()
+        # elif choice == 3:
+        #     self.player.rotate_counter_clockwise()
+        # elif choice == 4:
+        #     if self.cooldown % 30 == 0:  # Don't allow player to make bullet laser beams
+        #         bullet = Bullet(self.player, self.bullet_img)
+        #         self.bullets.add(bullet)
+        #         self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()
@@ -143,11 +159,12 @@ class Sandbox:
             asteroids = [x for x in b_zone if type(x) is Asteroid]
             for i in asteroids:
                 if pg.sprite.collide_circle(i, b):
-                    if i == self.player.closest_asteroid:
-                        self.player.score += 1
-                    else:
-                        self.player.score -= 1
-                    # self.player.score += 1
+                    # if i == self.player.closest_asteroid:
+                    #     self.player.score += 1
+                    # else:
+                    #     self.player.score -= 1
+                    self.player.score += 1
+                    self.player.shots_hit += 1
                     self.asteroids.remove(i)
                     self.bullets.remove(b)
                     self.grid.delete(i, i.rect.center[0], i.rect.center[1])
@@ -162,5 +179,4 @@ class Sandbox:
 
         for i in range(len(p1)):
             result += math.pow(p1[i] - p2[i], 2)
-
         return math.sqrt(result)

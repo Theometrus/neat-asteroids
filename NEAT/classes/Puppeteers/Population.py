@@ -24,9 +24,16 @@ class Population:
         self.make_starting_nodes()  # Template nodes for new networks to copy from
         self.make_starting_networks()  # Initial population members
 
+        self.connect_networks()
+
         # Randomize initial children to kickstart the algo
         for i in self.networks:
             i.mutate()
+
+    def connect_networks(self):
+        for n in self.networks:
+            for _ in range((INPUT_NODES + 1) * OUTPUT_NODES):
+                n.genome.mutate_add_link()
 
     def propagate(self, inputs):
         for i in self.networks:

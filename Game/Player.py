@@ -28,6 +28,8 @@ class Player(pg.sprite.Sprite):
         self.moved = 0.0
         self.turned = 0.0
         self.closest_asteroid = None
+        self.shots_fired = 1
+        self.shots_hit = 0
 
     def update(self):
         # max speed
@@ -42,12 +44,16 @@ class Player(pg.sprite.Sprite):
 
     def propagate(self, inputs):
         self.brain.outputs = []
-        inputs.append(self.angle)
-        if np.linalg.norm(inputs) == 0:
-            self.brain.calculate(inputs)
-        else:
-            self.brain.calculate(list(inputs / np.linalg.norm(inputs)))
-        return self.brain.outputs.index(max(self.brain.outputs))
+        inputs.append(self.angle / 360)
+        # if np.linalg.norm(inputs) == 0:
+        #     self.brain.calculate(inputs)
+        # else:
+        #     self.brain.calculate(list(inputs / np.linalg.norm(inputs)))
+
+        self.brain.calculate(inputs)
+        # print(list(inputs / np.linalg.norm(inputs)))
+        return self.brain.outputs
+        # return self.brain.outputs.index(max(self.brain.outputs))
 
     def accelerate(self):
         self.vel += self.acceleration
