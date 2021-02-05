@@ -3,12 +3,15 @@ import math
 import os
 import random
 
+import numpy as np
 import pygame as pg
+import pygame.freetype
 from math import atan2, degrees, pi
 
 from Game.Asteroid import Asteroid
 from Game.Bullet import Bullet
 from Game.Grid import Grid
+from Game.NetworkRenderer import NetworkRenderer
 from Game.Player import Player
 from settings import RESOLUTION, ASTEROID_COUNT
 
@@ -32,6 +35,8 @@ class Sandbox:
         self.cooldown = 0
         self.grid = Grid(RESOLUTION[0], RESOLUTION[1], 128)
         self.grid.insert(self.player, self.player.rect.center[0], self.player.rect.center[1])
+        self.displaying = False
+        self.net_renderer = NetworkRenderer(self.screen)
 
     def display(self):
         self.setup_background()
@@ -41,6 +46,27 @@ class Sandbox:
         self.bullets.draw(self.screen)
         self.asteroids.draw(self.screen)
         self.player_group.draw(self.screen)
+
+        ft_font = pygame.freetype.SysFont('Sans', 20)
+        text_str = 'Score: {}'.format(self.player.score)
+        text_rect = ft_font.get_rect(text_str)
+        text_rect.center = self.screen.get_rect().topleft
+        ft_font.render_to(self.screen, (text_rect[0] + 50, text_rect[1] + 20), text_str, (255, 255, 255))
+
+        if gints is None:
+            return
+
+        text_str = 'Inputs: {}'.format(list(np.around(gints, 2)))
+        text_rect = ft_font.get_rect(text_str)
+        text_rect.center = self.screen.get_rect().topright
+        ft_font.render_to(self.screen, (text_rect[0] - 100, text_rect[1] + 20), text_str, (255, 255, 255))
+
+        text_str = 'Outputs: {}'.format(list(np.around(gouts, 2)))
+        text_rect = ft_font.get_rect(text_str)
+        text_rect.center = self.screen.get_rect().topright
+        ft_font.render_to(self.screen, (text_rect[0] - 125, text_rect[1] + 50), text_str, (255, 255, 255))
+
+        self.net_renderer.render(self.player.brain)
 
     def tick(self):
         self.player.wrap_around_screen()
@@ -86,21 +112,28 @@ class Sandbox:
         rads = atan2(-dy, dx)
         rads %= 2 * pi
         degs = degrees(rads) / 360
-        closest /= self.distance((0, 0), (RESOLUTION[0], RESOLUTION[1]))
+        closest /= (self.distance((0, 0), (RESOLUTION[0], 0)) / 2)
         closest = 1 - closest
         inputs = [degs, closest]
         self.player.closest_asteroid = ast
         outputs = self.player.propagate(inputs)
+
+        # TODO Remove
+        if self.displaying:
+            global gints
+            gints = inputs
+            global gouts
+            gouts = outputs
 
         if outputs[0] >= 0.8:
             self.player.accelerate()
 
         if outputs[1] >= 0.8:
             self.player.rotate_clockwise()
-        elif outputs[2] >= 0.8:
+        elif outputs[1] <= 0.2:
             self.player.rotate_counter_clockwise()
 
-        if outputs[3] >= 0.8:
+        if outputs[2] >= 0.8:
             if self.cooldown % 100 == 0:  # Don't allow player to make bullet laser beams
                 bullet = Bullet(self.player, self.bullet_img)
                 self.bullets.add(bullet)
@@ -117,7 +150,7 @@ class Sandbox:
         count = 0
 
         for s in sprites:
-            if s.position.x > RESOLUTION[0] + 50 or s.position.x < -50 or s.position.y <= -50 or s.position.y > \
+            if s.position.x > RESOLUTION[0] + 30 or s.position.x < -50 or s.position.y <= -50 or s.position.y > \
                     RESOLUTION[1] + 50:
                 sprites.remove(s)
                 self.grid.delete(s, s.rect.center[0], s.rect.center[1])
@@ -146,10 +179,6 @@ class Sandbox:
             asteroids = [x for x in b_zone if type(x) is Asteroid]
             for i in asteroids:
                 if pg.sprite.collide_circle(i, b):
-                    # if i == self.player.closest_asteroid:
-                    #     self.player.score += 1
-                    # else:
-                    #     self.player.score -= 1
                     self.player.score += 1
                     self.player.shots_hit += 1
                     self.asteroids.remove(i)

@@ -15,6 +15,7 @@ class Node:
 
     def calculate(self, input_val):
         self.output = 0.0
+
         if self.node_type == "SENSOR" or self.node_type == "BIAS":
             self.output = self.activation_fn.compute(input_val)
 

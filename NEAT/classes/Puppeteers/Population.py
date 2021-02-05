@@ -24,7 +24,8 @@ class Population:
         self.make_starting_nodes()  # Template nodes for new networks to copy from
         self.make_starting_networks()  # Initial population members
 
-        self.connect_networks()
+        if FULLY_CONNECTED:
+            self.connect_networks()
 
         # Randomize initial children to kickstart the algo
         for i in self.networks:
@@ -193,13 +194,12 @@ class Population:
         return Genome(nodes_clone, self.innovation_guard)
 
     def make_starting_nodes(self):
-        for i in range(BIAS_NODES):
-            node = Node(self.innovation_guard.node_innov, IN_NODE_X, i, Bias(), "BIAS")
-            self.initial_nodes.append(node)
-            self.innovation_guard.node_innov += 1
+        node = Node(self.innovation_guard.node_innov, IN_NODE_X, 0, Bias(), "BIAS")
+        self.initial_nodes.append(node)
+        self.innovation_guard.node_innov += 1
 
         for i in range(INPUT_NODES):
-            node = Node(self.innovation_guard.node_innov, IN_NODE_X, i, Identity(), "SENSOR")
+            node = Node(self.innovation_guard.node_innov, IN_NODE_X, i + 1, Identity(), "SENSOR")
             self.initial_nodes.append(node)
             self.innovation_guard.node_innov += 1
 

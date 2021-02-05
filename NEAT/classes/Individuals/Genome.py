@@ -2,7 +2,24 @@ import random
 
 import numpy as np
 
+from NEAT.classes.Activation.Absolute import Absolute
+from NEAT.classes.Activation.Clamped import Clamped
+from NEAT.classes.Activation.Cube import Cube
+from NEAT.classes.Activation.ELU import ELU
+from NEAT.classes.Activation.Exp import Exp
+from NEAT.classes.Activation.Gauss import Gauss
+from NEAT.classes.Activation.Hat import Hat
+from NEAT.classes.Activation.Identity import Identity
+from NEAT.classes.Activation.Inverse import Inverse
+from NEAT.classes.Activation.LeLU import LeLU
+from NEAT.classes.Activation.Log import Log
 from NEAT.classes.Activation.ReLU import ReLU
+from NEAT.classes.Activation.SeLU import SeLU
+from NEAT.classes.Activation.Sigmoid import Sigmoid
+from NEAT.classes.Activation.Sin import Sin
+from NEAT.classes.Activation.Softplus import Softplus
+from NEAT.classes.Activation.Square import Square
+from NEAT.classes.Activation.Tanh import Tanh
 from NEAT.classes.Individuals.Connection import Connection
 from NEAT.classes.Individuals.Node import Node
 from NEAT.config.settings import *
@@ -14,6 +31,29 @@ class Genome:
         self.connections = []  # Note: Must be sorted by innovation number for faster comparisons
         self.connection_dict = {}  # Used for quickly checking if a given connection already exists in this genome
         self.innovation_guardian = innovation_guardian  # Singleton
+
+        # Activation functions kindly provided by CodeReclaimers at
+        # https://github.com/CodeReclaimers/neat-python/blob/master/neat/activations.py
+        self.activation_function_options = [
+            ReLU(),
+            Tanh(),
+            Sigmoid(),
+            Identity(),
+            Sin(),
+            Gauss(),
+            ELU(),
+            LeLU(),
+            SeLU(),
+            Softplus(),
+            Clamped(),
+            Inverse(),
+            Log(),
+            Exp(),
+            Absolute(),
+            Hat(),
+            Square(),
+            Cube()
+        ]
 
     def find_enabled_connection(self):
         found = False
@@ -38,10 +78,10 @@ class Genome:
         # of times once again based on settings
 
         values = [MUT_ADD_NODE, MUT_ADD_LINK, MUT_WEIGHT_ADJUST, MUT_TOGGLE_LINK, MUT_REMOVE_LINK, MUT_REMOVE_NODE,
-                  NO_MUTATION]
+                  NO_MUTATION, MUT_CHANGE_ACTIVATION]
 
         probabilities = list(map(lambda x: x/sum(values), values))
-        choices = [0, 1, 2, 3, 4, 5, 6]
+        choices = [0, 1, 2, 3, 4, 5, 6, 7]
 
         choice = np.random.choice(choices, 1, p=probabilities)
 
@@ -64,6 +104,17 @@ class Genome:
             self.mutate_remove_node()
 
         # If choice == 6 do nothing
+
+        elif choice == 7:
+            self.mutate_change_activation()
+
+    def mutate_change_activation(self):
+        nodes = [x for x in self.nodes if x.node_type == "HIDDEN"]  # Don't change sensor, bias, and output functions
+        if len(nodes) == 0:
+            return
+
+        node = random.choice(nodes)
+        node.activation_fn = random.choice(self.activation_function_options)
 
     def mutate_remove_node(self):
         node = None
@@ -110,6 +161,10 @@ class Genome:
 
     def mutate_adjust_weights(self):
         # Iterates through all connections and either perturbs the weight slightly or reassigns it completely
+
+        if len(self.connections) == 0:
+            self.mutate_add_link()
+            return
 
         for i in self.connections:
             if random.uniform(0.0, 1.0) <= MUT_WEIGHT_SHIFT + MUT_WEIGHT_REASSIGN:
@@ -278,10 +333,11 @@ class Genome:
         if length == 0:
             delta = 0
         else:
-            length = 1 if length < 20 else length  # Encourage speciation in smaller genotypes
+            # length = 1 if length < 20 else length  # Encourage speciation in smaller genotypes
+            length = max(length - 20, 1)  # Encourage speciation in smaller genotypes
 
-            delta = (EXCESS_COEFFICIENT * excess / length) + (
-                    DISJOINT_COEFFICIENT * disjoint / length) + WEIGHT_COEFFICIENT * weight_diff
+            delta = ((EXCESS_COEFFICIENT * excess) / length) + (
+                    (DISJOINT_COEFFICIENT * disjoint) / length) + (WEIGHT_COEFFICIENT * weight_diff)
 
         return delta
 

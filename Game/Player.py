@@ -44,7 +44,7 @@ class Player(pg.sprite.Sprite):
 
     def propagate(self, inputs):
         self.brain.outputs = []
-        inputs.append(self.angle / 360)
+        inputs.append(1 - self.angle / 360)
         self.brain.calculate(inputs)
         return self.brain.outputs
 
@@ -70,6 +70,7 @@ class Player(pg.sprite.Sprite):
         # Rotate the acceleration vector.
         self.acceleration.rotate_ip(self.angle_speed)
         self.angle += self.angle_speed
+
         if self.angle > 360:
             self.angle -= 360
         elif self.angle < 0:

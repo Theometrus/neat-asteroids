@@ -9,7 +9,7 @@ from settings import RESOLUTION
 
 
 def main():
-    screen = pg.display.set_mode(RESOLUTION)
+    screen = pg.display.set_mode([RESOLUTION[0] * 2, RESOLUTION[1]])
     pg.display.set_caption("NEAT Asteroids")
 
     delay = 0
@@ -21,8 +21,11 @@ def main():
     sandboxes = [Sandbox(screen, brain) for brain in population.networks]
     print("========== GENERATION {} START ==========".format(gen))
     player = random.choice(sandboxes)
+    player.displaying = True
     clock = pg.time.Clock()
     while running:
+        screen.fill((0, 0, 0))
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
@@ -33,6 +36,12 @@ def main():
 
                 elif event.key == pg.K_LEFT:
                     delay += 10
+
+                elif event.key == pg.K_n:
+                    player.displaying = False
+                    living_players = [x for x in sandboxes if not x.player.dead]
+                    player = random.choice(living_players)
+                    player.displaying = True
 
         all_dead = True
 
@@ -45,13 +54,15 @@ def main():
             living_players = [x for x in sandboxes if not x.player.dead]
             if len(living_players) > 0:
                 player = random.choice(living_players)
+                player.displaying = True
 
         player.display()
         pg.display.update()
         pg.time.delay(delay)
-        pg.display.set_caption("NEAT Asteroids - {} Player(s) Surviving".format(len([x for x in sandboxes if not x.player.dead])))
+        pg.display.set_caption(
+            "NEAT Asteroids - {} Player(s) Surviving".format(len([x for x in sandboxes if not x.player.dead])))
 
-        # clock.tick(1)
+        clock.tick(60)
 
         if all_dead:
             for i in sandboxes:
@@ -59,7 +70,7 @@ def main():
 
             avg = sum(list(fitness_eval.networks.values())) / len(population.networks)
 
-            print("AVERAGE SCORE: {}".format(avg))
+            print("AVERAGE FITNESS: {}".format(avg))
             population.evolve()
             fitness_eval.networks = {}
             print("=========== GENERATION {} END ===========".format(gen))

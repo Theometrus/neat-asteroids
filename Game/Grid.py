@@ -27,7 +27,7 @@ class Grid:
         try:
             self.grid[self.get_key(x, y)].remove(elem)
         except ValueError:
-            print("Tried deleting an item that wasn't in the grid!")
+            pass
 
     def get_zone(self, x, y):
         return self.grid[self.get_key(x, y)]
