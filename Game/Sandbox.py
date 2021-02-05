@@ -64,7 +64,7 @@ class Sandbox:
         text_str = 'Outputs: {}'.format(list(np.around(gouts, 2)))
         text_rect = ft_font.get_rect(text_str)
         text_rect.center = self.screen.get_rect().topright
-        ft_font.render_to(self.screen, (text_rect[0] - 125, text_rect[1] + 50), text_str, (255, 255, 255))
+        ft_font.render_to(self.screen, (text_rect[0] - 100, text_rect[1] + 50), text_str, (255, 255, 255))
 
         self.net_renderer.render(self.player.brain)
 
