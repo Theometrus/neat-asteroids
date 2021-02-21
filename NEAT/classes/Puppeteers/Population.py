@@ -14,7 +14,6 @@ from NEAT.config.settings import *
 
 class Population:
     def __init__(self, fitness_evaluator):
-        # Note: fresh networks are created with no connections whatsoever. Connections must be mutated into
         self.networks = []
         self.species = []
         self.fitness_evaluator = fitness_evaluator
@@ -90,9 +89,16 @@ class Population:
             s.representative = random.choice(s.members)
 
     def erase_extinct_species(self):
-        self.species = [x for x in self.species if len(x.members) > 0 and x.stagnation_timer > 0]
-        if len(self.species) == 0:
-            raise Exception('A mass extinction has occurred.')
+        self.species.sort(key=lambda x: x.current_best)
+
+        new_species = [x for x in self.species if len(x.members) > 0 and x.stagnation_timer > 0]
+
+        # If the whole population has not improved in the last couple of generations, only allow the top two species
+        # to reproduce to refocus the search into the most promising areas
+        if len(new_species) == 0:
+            new_species = self.species[-2:]
+
+        self.species = new_species
 
     def calculate_initial_fitnesses(self):
         for s in self.species:

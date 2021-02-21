@@ -19,7 +19,7 @@ class Player(pg.sprite.Sprite):
         self.acceleration = vec(0.1, 0.0)
         self.angle_speed = 0
         self.angle = 0
-        self.score = 0.0
+        self.score = 0
         self.radius = 5
         self.curr_img = 0
         self.dead = False
@@ -28,8 +28,10 @@ class Player(pg.sprite.Sprite):
         self.moved = 0.0
         self.turned = 0.0
         self.closest_asteroid = None
+        self.target = None
         self.shots_fired = 0
         self.shots_hit = 0
+        self.killed = False
 
     def update(self):
         # max speed
@@ -44,7 +46,6 @@ class Player(pg.sprite.Sprite):
 
     def propagate(self, inputs):
         self.brain.outputs = []
-        inputs.append(1 - self.angle / 360)
         self.brain.calculate(inputs)
         return self.brain.outputs
 
@@ -56,13 +57,8 @@ class Player(pg.sprite.Sprite):
         self.vel -= self.acceleration
         self.moved += 0.5
 
-    def rotate_counter_clockwise(self):
-        self.angle_speed = -5
-        self.rotate()
-        self.turned += 1
-
-    def rotate_clockwise(self):
-        self.angle_speed = 5
+    def steer(self, amount):
+        self.angle_speed = amount
         self.rotate()
         self.turned += 1
 

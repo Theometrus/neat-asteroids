@@ -1,3 +1,4 @@
+import math
 import random
 
 import numpy as np
@@ -327,14 +328,14 @@ class Genome:
         else:
             weight_diff /= similar
 
-        excess = abs(len(self.connections) - len(genome.connections))
+        excess = abs(len(self.connections) - len(genome.connections) - disjoint)
         length = max(len(self.connections), len(genome.connections))
 
         if length == 0:
             delta = 0
         else:
+            length = 1
             # length = 1 if length < 20 else length  # Encourage speciation in smaller genotypes
-            length = max(length - 20, 1)  # Encourage speciation in smaller genotypes
 
             delta = ((EXCESS_COEFFICIENT * excess) / length) + (
                     (DISJOINT_COEFFICIENT * disjoint) / length) + (WEIGHT_COEFFICIENT * weight_diff)

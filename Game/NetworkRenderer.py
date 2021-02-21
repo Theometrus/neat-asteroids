@@ -22,20 +22,30 @@ class NetworkRenderer:
         for i in network.genome.nodes:
             intensity = min(abs(245 * i.output) + 10, 255)
             x = i.x * (RESOLUTION[0] - 40) + RESOLUTION[0] + 50
-            gfxdraw.aacircle(self.screen, round(x), round(i.y * 60 + 150), 17, (0, 0, 0))
-            gfxdraw.filled_circle(self.screen, round(x), round(i.y * 60 + 150), 17, (0, 0, intensity))
+            gfxdraw.aacircle(self.screen, round(x), round(i.y * 60 + 150), 14, (0, 0, 0))
+            gfxdraw.filled_circle(self.screen, round(x), round(i.y * 60 + 150), 14, (0, 0, intensity))
             font = pg.font.SysFont('comicsans', 20)
             text = font.render(str(i.innovation_number), 1, (255, 255, 255))
-            self.screen.blit(text, ((x - 2), i.y * 60 + 145))
+            text_rect = text.get_rect(center=(round(x),  round(i.y * 60 + 150)))
+            self.screen.blit(text, text_rect)
 
-        self.render_action(network.genome.nodes[-3], "BOOST", 434, 120, False)
+        self.render_action(network.genome.nodes[-3], "BOOST", 432, 120, False)
+        self.render_alternatives(network.genome.nodes[-2], "RIGHT", "LEFT", 434, 185)
+        self.render_action(network.genome.nodes[-1], "SHOOT", 434, 245, False)
 
-        if network.genome.nodes[-2].output >= 0.8:
+        self.render_action(None, "BIAS", 87, 120, True)
+        self.render_action(None, "CLOSEST ANGLE", 65, 185, True)
+        self.render_action(None, "CLOSEST DIST.", 67, 245, True)
+        self.render_action(None, "BOUNTY ANGLE", 65, 305, True)
+        self.render_action(None, "BOUNTY DIST.", 70, 365, True)
+
+    def render_alternatives(self, node, alt1, alt2, x_offset, y_offset):
+        if node.output >= 0.9:
             intensity = (255, 255, 255)
-            action = "RIGHT"
-        elif network.genome.nodes[-2].output <= 0.2:
+            action = alt1
+        elif node.output <= 0.1:
             intensity = (255, 255, 255)
-            action = "LEFT"
+            action = alt2
         else:
             intensity = (0, 0, 0)
             action = ""
@@ -43,14 +53,8 @@ class NetworkRenderer:
         ft_font = pg.freetype.SysFont('Sans', 10)
         text_str = action
         text_rect = ft_font.get_rect(text_str)
-        text_rect.center = (RESOLUTION[0] + 434, 185)
+        text_rect.center = (RESOLUTION[0] + x_offset, y_offset)
         ft_font.render_to(self.screen, text_rect.center, text_str, intensity)
-
-        self.render_action(network.genome.nodes[-1], "SHOOT", 434, 245, False)
-        self.render_action(None, "BIAS", 87, 120, True)
-        self.render_action(None, "AST. ANGLE", 72, 185, True)
-        self.render_action(None, "AST. DIST.", 77, 245, True)
-        self.render_action(None, "BEARING", 77, 305, True)
 
     def render_action(self, node, action, x_offset, y_offset, always_on):
         if not always_on:

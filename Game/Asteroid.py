@@ -17,7 +17,7 @@ class Asteroid(pg.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.position)
         self.angle = 0
         self.angle_speed = random.uniform(-1.0, 1.0)
-        self.radius = 30
+        self.radius = 33
 
     def spawn_out_of_screen(self):
         spawn_zones = [

@@ -17,7 +17,7 @@ from settings import RESOLUTION, ASTEROID_COUNT
 
 
 class Sandbox:
-    def __init__(self, screen, brain):
+    def __init__(self, screen, brain, extra_ast):
         game_folder = os.path.dirname(__file__)
         img_folder = os.path.join(game_folder, 'sprites')
 
@@ -37,11 +37,20 @@ class Sandbox:
         self.grid.insert(self.player, self.player.rect.center[0], self.player.rect.center[1])
         self.displaying = False
         self.net_renderer = NetworkRenderer(self.screen)
+        self.time = 0
+        self.bounty_timer = 20
+        self.extra_asteroids = extra_ast
 
     def display(self):
         self.setup_background()
-        pg.draw.line(self.screen, color=(255, 255, 255), start_pos=self.player.rect.center,
-                     end_pos=self.player.closest_asteroid.rect.center)
+        if self.player.target == self.player.closest_asteroid:
+            pg.draw.line(self.screen, color=(255, 255, 255), start_pos=self.player.rect.center,
+                         end_pos=self.player.closest_asteroid.rect.center, width=2)
+        else:
+            pg.draw.line(self.screen, color=(255, 255, 255), start_pos=self.player.rect.center,
+                         end_pos=self.player.closest_asteroid.rect.center)
+        pg.draw.line(self.screen, color=(255, 0, 0), start_pos=self.player.rect.center,
+                     end_pos=self.player.target.rect.center)
 
         self.bullets.draw(self.screen)
         self.asteroids.draw(self.screen)
@@ -59,12 +68,17 @@ class Sandbox:
         text_str = 'Inputs: {}'.format(list(np.around(gints, 2)))
         text_rect = ft_font.get_rect(text_str)
         text_rect.center = self.screen.get_rect().topright
-        ft_font.render_to(self.screen, (text_rect[0] - 100, text_rect[1] + 20), text_str, (255, 255, 255))
+        ft_font.render_to(self.screen, (text_rect[0] - 110, text_rect[1] + 20), text_str, (255, 255, 255))
 
         text_str = 'Outputs: {}'.format(list(np.around(gouts, 2)))
         text_rect = ft_font.get_rect(text_str)
         text_rect.center = self.screen.get_rect().topright
         ft_font.render_to(self.screen, (text_rect[0] - 100, text_rect[1] + 50), text_str, (255, 255, 255))
+
+        text_str = 'Time: {}'.format(self.bounty_timer)
+        text_rect = ft_font.get_rect(text_str)
+        text_rect.center = self.screen.get_rect().midtop
+        ft_font.render_to(self.screen, (text_rect[0] - 40, text_rect[1] + 20), text_str, (255, 255, 255))
 
         self.net_renderer.render(self.player.brain)
 
@@ -85,7 +99,14 @@ class Sandbox:
 
         self.check_collisions()
         self.propagate_player()
-        self.cooldown += 1
+        self.cooldown -= 1
+        self.cooldown = max(0, self.cooldown)
+        self.time += 1
+
+        if self.time % 60 == 0:
+            self.bounty_timer -= 1
+            if self.bounty_timer <= 0:
+                self.player.die()
 
     def update_element_and_grid(self, elem):
         old_x = elem.rect.center[0]
@@ -107,38 +128,69 @@ class Sandbox:
                 closest = dist
                 ast = a
 
-        dx = ast.rect.center[0] - self.player.rect.center[0]
-        dy = ast.rect.center[1] - self.player.rect.center[1]
-        rads = atan2(-dy, dx)
-        rads %= 2 * pi
-        degs = degrees(rads) / 360
-        closest /= (self.distance((0, 0), (RESOLUTION[0], 0)) / 2)
-        closest = 1 - closest
-        inputs = [degs, closest]
+        closest = self.norm_distance(self.player, ast)
         self.player.closest_asteroid = ast
+        degs = self.norm_angle(ast)
+
+        if self.player.target is None:
+            self.player.target = random.choice(list(self.asteroids))
+
+        target_dist = self.norm_distance(self.player.target, self.player)
+        target_angle = self.norm_angle(self.player.target)
+
+        inputs = [degs, closest, target_angle, target_dist]
         outputs = self.player.propagate(inputs)
 
-        # TODO Remove
         if self.displaying:
             global gints
             gints = inputs
             global gouts
             gouts = outputs
 
+        # Move
         if outputs[0] >= 0.8:
             self.player.accelerate()
 
-        if outputs[1] >= 0.8:
-            self.player.rotate_clockwise()
-        elif outputs[1] <= 0.2:
-            self.player.rotate_counter_clockwise()
+        # Steer
+        if outputs[1] >= 0.9:
+            if outputs[0] >= 0.9 or outputs[0] <= 0.1:
+                self.player.steer(1)
+            else:
+                self.player.steer(5)
+        elif outputs[1] <= 0.1:
+            if outputs[0] >= 0.9 or outputs[0] <= 0.1:
+                self.player.steer(-1)
+            else:
+                self.player.steer(-5)
 
+        # Shoot
         if outputs[2] >= 0.8:
-            if self.cooldown % 100 == 0:  # Don't allow player to make bullet laser beams
+            if self.cooldown == 0:  # Don't allow player to make bullet laser beams
                 bullet = Bullet(self.player, self.bullet_img)
                 self.bullets.add(bullet)
                 self.grid.insert(bullet, bullet.rect.center[0], bullet.rect.center[1])
                 self.player.shots_fired += 1
+                self.cooldown = 50
+
+    def norm_angle(self, a):
+        dx = a.rect.center[0] - self.player.rect.center[0]
+        dy = a.rect.center[1] - self.player.rect.center[1]
+        rads = atan2(-dy, dx)
+        rads %= 2 * pi
+        degs = degrees(rads)
+
+        degs = abs(360 - self.player.angle - abs(degs))
+        if degs > 180:
+            degs -= 360
+            degs = abs(degs)
+
+        return degs / 180
+
+    def norm_distance(self, a, b):
+        target_dist = self.distance(a.rect.center, b.rect.center)
+        target_dist /= (self.distance((0, 0), (RESOLUTION[0], 0)) / 2)
+        target_dist = max(1 - target_dist, 0.00)
+        return target_dist
 
     def setup_background(self):
         brick_width, brick_height = self.bg.get_width(), self.bg.get_height()
@@ -155,11 +207,13 @@ class Sandbox:
                 sprites.remove(s)
                 self.grid.delete(s, s.rect.center[0], s.rect.center[1])
                 count += 1
+                if s == self.player.target:
+                    self.player.target = None
 
         return count
 
     def replenish_asteroids(self):
-        while len(self.asteroids) < ASTEROID_COUNT:
+        while len(self.asteroids) < ASTEROID_COUNT + self.extra_asteroids:
             asteroid = Asteroid(random.choice(self.ast_imgs))
             self.asteroids.add(asteroid)
             self.grid.insert(asteroid, asteroid.rect.center[0], asteroid.rect.center[1])
@@ -173,14 +227,27 @@ class Sandbox:
 
             if i not in self.bullets and pg.sprite.collide_circle(self.player, i):
                 self.player.die()
+                self.player.killed = True
 
         for b in self.bullets:
             b_zone = self.grid.get_zone(b.rect.center[0], b.rect.center[1])
             asteroids = [x for x in b_zone if type(x) is Asteroid]
             for i in asteroids:
                 if pg.sprite.collide_circle(i, b):
-                    self.player.score += 1
-                    self.player.shots_hit += 1
+                    if self.player.closest_asteroid == i:
+                        self.player.score += 1
+                        self.player.shots_hit += 1
+
+                    if self.player.target == i:
+                        self.player.score += round((self.norm_distance(self.player, self.player.target)) * 5)
+                        self.player.shots_hit += 1
+                        self.bounty_timer = 20
+                        self.player.target = None
+
+                    if self.player.target != i and self.player.closest_asteroid != i:
+                        self.player.score -= 1
+                        self.player.score = max(self.player.score, 0)
+
                     self.asteroids.remove(i)
                     self.bullets.remove(b)
                     self.grid.delete(i, i.rect.center[0], i.rect.center[1])

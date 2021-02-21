@@ -1,3 +1,4 @@
+import math
 import random
 
 import pygame as pg
@@ -5,7 +6,7 @@ import pygame as pg
 from AsteroidFitnessEvaluator import AsteroidFitnessEvaluator
 from Game.Sandbox import Sandbox
 from NEAT.classes.Puppeteers.Population import Population
-from settings import RESOLUTION
+from settings import RESOLUTION, ASTEROID_COUNT
 
 
 def main():
@@ -18,11 +19,12 @@ def main():
     population = Population(fitness_eval)
     gen = 0
     running = True
-    sandboxes = [Sandbox(screen, brain) for brain in population.networks]
+    sandboxes = [Sandbox(screen, brain, 0) for brain in population.networks]
     print("========== GENERATION {} START ==========".format(gen))
     player = random.choice(sandboxes)
     player.displaying = True
     clock = pg.time.Clock()
+    speed_run = False
     while running:
         screen.fill((0, 0, 0))
 
@@ -43,6 +45,9 @@ def main():
                     player = random.choice(living_players)
                     player.displaying = True
 
+                elif event.key == pg.K_s:
+                    speed_run = not speed_run
+
         all_dead = True
 
         for i in sandboxes:
@@ -62,7 +67,8 @@ def main():
         pg.display.set_caption(
             "NEAT Asteroids - {} Player(s) Surviving".format(len([x for x in sandboxes if not x.player.dead])))
 
-        clock.tick(60)
+        if not speed_run:
+            clock.tick(60)
 
         if all_dead:
             for i in sandboxes:
@@ -75,9 +81,14 @@ def main():
             fitness_eval.networks = {}
             print("=========== GENERATION {} END ===========".format(gen))
             gen += 1
-            sandboxes = [Sandbox(screen, brain) for brain in population.networks]
+            ast = ASTEROID_COUNT
+            # ast = min(math.floor(round(gen / 10)), 15)  # Cap asteroids at 15
+            sandboxes = [Sandbox(screen, brain, ast) for brain
+                         in population.networks]
             print("========== GENERATION {} START ==========".format(gen))
+            print("THIS GENERATION HAS {} ASTEROIDS".format(ASTEROID_COUNT))
             player = random.choice(sandboxes)
+            player.displaying = True
             print("NUMBER OF SPECIES: {}".format(len(population.species)))
 
 
@@ -85,3 +96,4 @@ if __name__ == '__main__':
     pg.init()
     main()
     pg.quit()
+
