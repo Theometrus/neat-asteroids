@@ -69,3 +69,4 @@ After quite a few generations, "killer drones" are produced. These players are t
 ![](./gifs/stage_4.gif)
 
 ### Conclusion
+I hope everything was clear and enjoyable to read. If you have any questions, I'm always happy to discuss this project in more detail!
