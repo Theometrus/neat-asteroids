@@ -65,8 +65,12 @@ The AI keeps improving. It now actively seeks out its bounties, attempts to get 
 ![](./gifs/stage_3.gif)
 
 ### Stage 4
-After quite a few generations, "killer drones" are produced. These players are true bounty hunters that move with ruthless efficiency and live with reckless abandon. The only way these players tend to die is to the timer, which is the reason it exists in the first place (to keep the mutations moving along and prevent the AI from simply playing the game forever).
+After quite a few generations, the AI can be said to be quite good at the game. The only way the players tend to die at this point is to the timer, which is the reason it exists in the first place (to keep the mutations moving along and prevent the AI from simply playing the game forever).
 ![](./gifs/stage_4.gif)
+
+### Bonus Stage
+At some point in my testing I encountered these "killer drones" which move with ruthless efficiency and live with reckless abandon. They were quite entertaining to watch, though their preference for high speed often resulted in them crashing into things.
+![](./gifs/stage_4_old.gif)
 
 ### Conclusion
 I hope everything was clear and enjoyable to read. If you have any questions, I'm always happy to discuss this project in more detail!
