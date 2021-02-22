@@ -53,7 +53,7 @@ At the beginning, the AI doesn't really know what to do. Some players wander and
 ![](./gifs/stage_0.gif)
 
 ### Stage 1
-As time passes, useful mutations begin to emerge. The AI begins to try out new tactics, such as moving around and shooting.
+As time passes, useful mutations (at this point, in the form of connection weight adjustments) begin to emerge. The AI begins to try out new tactics, such as moving around and shooting.
 ![](./gifs/stage_1.gif)
 
 ### Stage 2
