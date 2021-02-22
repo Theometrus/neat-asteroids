@@ -62,7 +62,7 @@ At this point, the AI has some semblance of an idea as to what it is supposed to
 
 ### Stage 3
 The AI keeps improving. It now actively seeks out its bounties, attempts to get into melee range, and shoots more confidently.
-![stage_3_gif](https://media.giphy.com/media/9D5SbN1pv4neYJzwR7/giphy.gif)
+![](./gifs/stage_3.gif)
 
 ### Stage 4
 After quite a few generations, "killer drones" are produced. These players are true bounty hunters that move with ruthless efficiency and live with reckless abandon. The only way these players tend to die is to the timer, which is the reason it exists in the first place (to keep the mutations moving along and prevent the AI from simply playing the game forever).
