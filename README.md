@@ -1,6 +1,6 @@
 # Preface
 This project is my pride and joy, having taken a lot of time, dedication, and effort to complete. It is a from-scratch implementation of the NeuroEvolution of Augmenting Topologies algorithm as detailed in [Kenneth Stanley's original paper](http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf), used to create
-neurals network able to effectively play the classic retro game of *Asteroids*. In other words, **the program produces an AI which plays *Asteroids* well, automatically**.
+neural networks able to effectively play the classic retro game of *Asteroids*. In other words, **the program produces an AI which plays *Asteroids* well, automatically**.
 
 # Algorithm
 The details of the theory behind the algorithm can be found in the research paper linked above. To give a high-level overview though, NEAT attempts to find a solution to a given
